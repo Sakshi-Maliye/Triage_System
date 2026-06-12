@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tri-Check Anemia Triage</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg-base:       #07090f;
+      --bg-card:       #0d1117;
+      --bg-card2:      #111827;
+      --border:        #1e2d40;
+      --accent:        #00e5ff;
+      --accent2:       #7b61ff;
+      --accent-danger: #ff4d6d;
+      --text-primary:  #e8eaf0;
+      --text-muted:    #6b7fa3;
+      --font-mono:     'Space Mono', monospace;
+      --font-body:     'DM Sans', sans-serif;
+      --radius:        14px;
+      --shadow:        0 4px 32px rgba(0,0,0,.55);
+    }
+
+    /* ── Base ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+
+    /* ── Grid background ───────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────── */
+    header {
+      position: relative;
+      z-index: 1;
+      padding: 3rem 1rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: 1rem;
+    }
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+    }
+    .logo-text {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      letter-spacing: .15em;
+      color: var(--accent);
+    }
+    h1 {
+      font-family: var(--font-mono);
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      background: linear-gradient(90deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      margin-top: .5rem;
+      font-size: .95rem;
+      font-weight: 300;
+    }
+
+    /* ── Steps bar ─────────────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2rem auto .5rem;
+      max-width: 560px;
+    }
+    .step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .3rem;
+      font-size: .75rem;
+      color: var(--text-muted);
+    }
+    .step-num {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      transition: all .3s;
+    }
+    .step.active .step-num {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg-base);
+      box-shadow: 0 0 14px rgba(0,229,255,.4);
+    }
+    .step-line { flex: 1; height: 1px; background: var(--border); margin-top: 14px; }
+
+    /* ── Main card ─────────────────────────────────────────────────── */
+    .triage-form {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 2rem auto 4rem;
+      padding: 0 1rem;
+    }
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Upload card ───────────────────────────────────────────────── */
+    .upload-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem;
+      transition: border-color .3s, box-shadow .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity .4s;
+    }
+    .upload-card:focus-within,
+    .upload-card.has-file {
+      border-color: rgba(0,229,255,.35);
+      box-shadow: 0 0 0 1px rgba(0,229,255,.1), var(--shadow);
+    }
+    .upload-card:focus-within::before,
+    .upload-card.has-file::before { opacity: 1; }
+
+    .card-icon-wrap {
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .icon-eye    { background: rgba(0,229,255,.12); color: #00e5ff; }
+    .icon-tongue { background: rgba(255,77,109,.12); color: #ff4d6d; }
+    .icon-nail   { background: rgba(123,97,255,.12); color: #7b61ff; }
+
+    .upload-label {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: .25rem;
+      letter-spacing: .01em;
+    }
+    .upload-hint {
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      line-height: 1.5;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 1.6rem 1rem;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color .25s, background .25s;
+      position: relative;
+    }
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(0,229,255,.04);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 1.6rem; color: var(--text-muted); margin-bottom: .4rem; }
+    .drop-text { font-size: .8rem; color: var(--text-muted); }
+    .drop-text strong { color: var(--text-primary); }
+
+    /* Preview image inside card */
+    .preview-wrap {
+      display: none;
+      margin-top: .8rem;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .preview-wrap img { width: 100%; height: 140px; object-fit: cover; display: block; }
+    .preview-name {
+      padding: .35rem .75rem;
+      font-size: .72rem;
+      color: var(--text-muted);
+      background: var(--bg-card2);
+      font-family: var(--font-mono);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* ── Alert banner ──────────────────────────────────────────────── */
+    .alert-custom {
+      background: rgba(255, 77, 109, .1);
+      border: 1px solid rgba(255, 77, 109, .3);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      color: #ff8fa3;
+      font-size: .875rem;
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: .7rem;
+    }
+
+    /* ── Submit button ─────────────────────────────────────────────── */
+    .btn-triage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: var(--radius);
+      color: #07090f;
+      font-family: var(--font-mono);
+      font-size: .95rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 0 24px rgba(0,229,255,.2);
+    }
+    .btn-triage:hover {
+      opacity: .9;
+      transform: translateY(-1px);
+      box-shadow: 0 0 32px rgba(0,229,255,.35);
+    }
+    .btn-triage:active { transform: translateY(0); }
+    .btn-triage:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    /* ── Spinner ───────────────────────────────────────────────────── */
+    .spinner-ring {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(7,9,15,.4);
+      border-top-color: #07090f;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Info strip ────────────────────────────────────────────────── */
+    .info-strip {
+      position: relative; z-index: 1;
+      max-width: 960px;
+      margin: 0 auto 3rem;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .info-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+    .info-chip strong { display: block; color: var(--text-primary); margin-bottom: .2rem; font-size: .85rem; }
+
+    /* ── Footer ────────────────────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .76rem;
+      color: var(--text-muted);
+    }
+    footer span { color: var(--accent); }
+
+    /* ── Responsive tweaks ─────────────────────────────────────────── */
+    @media (max-width: 576px) {
+      header { padding: 2rem 1rem 1.5rem; }
+      .upload-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ════ Header ═══════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo-mark">
+    <div class="logo-icon">🩺</div>
+    <span class="logo-text">TRI-CHECK</span>
+  </div>
+  <h1>Anemia Triage System</h1>
+  <p class="subtitle">Non-invasive · Three-point physiological analysis · AI-powered assessment</p>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active">
+      <div class="step-num">1</div>
+      <span>Upload</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <span>Analyze</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <span>Report</span>
+    </div>
+  </div>
+</header>
+
+<!-- ════ Form ════════════════════════════════════════════════════════════════= -->
+<div class="triage-form">
+
+  {% if error %}
+  <div class="alert-custom">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  <form method="POST" action="/predict" enctype="multipart/form-data" id="triageForm">
+
+    <div class="upload-grid">
+
+      <!-- Eye Card -->
+      <div class="upload-card" id="card-eye">
+        <div class="card-icon-wrap icon-eye"><i class="bi bi-eye-fill"></i></div>
+        <div class="upload-label">Conjunctiva (Eye)</div>
+        <div class="upload-hint">
+          Lower eyelid inner surface.<br>
+          Pull down gently, photograph under natural light.
+        </div>
+        <label class="drop-zone" id="zone-eye">
+          <input type="file" name="eye_image" id="eye_image"
+                 accept=".jpg,.jpeg,.png,.bmp,.webp"
+                 onchange="previewFile(this, 'card-eye', 'preview-eye')" required />
+          <div class="drop-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+          <div class="drop-text"><strong>Click or drag</strong> to upload<br>JPG / PNG / BMP</div>
+        </label>
+        <div class="preview-wrap" id="preview-eye">
+          <img src="" alt="Eye preview" />
+          <div class="preview-name" id="name-eye"></div>
+        </div>
+      </div>
+
+      <!-- Tongue Card -->
+      <div class="upload-card" id="card-tongue">
+        <div class="card-icon-wrap icon-tongue"><i class="bi bi-moisture"></i></div>
+        <div class="upload-label">Tongue Surface</div>
+        <div class="upload-hint">
+          Extend tongue fully, photograph center.<br>
+          Use consistent, neutral lighting for best results.
+        </div>
+        <label class="drop-zone" id="zone-tongue">
+          <input type="file" name="tongue_image" id="tongue_image"
+                 accept=".jpg,.jpeg,.png,.bmp,.webp"
+                 onchange="previewFile(this, 'card-tongue', 'preview-tongue')" required />
+          <div class="drop-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+          <div class="drop-text"><strong>Click or drag</strong> to upload<br>JPG / PNG / BMP</div>
+        </label>
+        <div class="preview-wrap" id="preview-tongue">
+          <img src="" alt="Tongue preview" />
+          <div class="preview-name" id="name-tongue"></div>
+        </div>
+      </div>
+
+      <!-- Nail Card -->
+      <div class="upload-card" id="card-nail">
+        <div class="card-icon-wrap icon-nail"><i class="bi bi-hand-index-fill"></i></div>
+        <div class="upload-label">Index Fingernail</div>
+        <div class="upload-hint">
+          Photograph the nail bed of your index finger.<br>
+          Press gently on nail for pallor test if possible.
+        </div>
+        <label class="drop-zone" id="zone-nail">
+          <input type="file" name="nail_image" id="nail_image"
+                 accept=".jpg,.jpeg,.png,.bmp,.webp"
+                 onchange="previewFile(this, 'card-nail', 'preview-nail')" required />
+          <div class="drop-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+          <div class="drop-text"><strong>Click or drag</strong> to upload<br>JPG / PNG / BMP</div>
+        </label>
+        <div class="preview-wrap" id="preview-nail">
+          <img src="" alt="Nail preview" />
+          <div class="preview-name" id="name-nail"></div>
+        </div>
+      </div>
+
+    </div><!-- /upload-grid -->
+
+    <button type="submit" class="btn-triage" id="submitBtn">
+      <div class="spinner-ring" id="spinner"></div>
+      <i class="bi bi-cpu-fill" id="btnIcon"></i>
+      <span id="btnText">Run Triage Analysis</span>
+    </button>
+
+  </form>
+</div>
+
+<!-- ════ Info strip ═══════════════════════════════════════════════════════════ -->
+<div class="info-strip">
+  <div class="info-chip">
+    <strong><i class="bi bi-shield-check me-1"></i>Non-Invasive</strong>
+    No blood samples required. Purely photometric analysis.
+  </div>
+  <div class="info-chip">
+    <strong><i class="bi bi-cpu me-1"></i>MediaPipe Tracking</strong>
+    FaceMesh + Hands models locate anatomical landmarks in real time.
+  </div>
+  <div class="info-chip">
+    <strong><i class="bi bi-bar-chart-steps me-1"></i>Deep Neural Network</strong>
+    DNN trained on multi-source annotated physiological image data.
+  </div>
+  <div class="info-chip">
+    <strong><i class="bi bi-exclamation-circle me-1"></i>Disclaimer</strong>
+    For informational screening only. Not a substitute for clinical diagnosis.
+  </div>
+</div>
+
+<!-- ════ Footer ═══════════════════════════════════════════════════════════════ -->
+<footer>
+  Tri-Check Anemia Triage &nbsp;·&nbsp; Built with
+  <span>Flask</span>, <span>MediaPipe</span> &amp; <span>TensorFlow</span>
+</footer>
+
+<script>
+  /* ── File preview ──────────────────────────────────────────────────────── */
+  function previewFile(input, cardId, previewId) {
+    const card    = document.getElementById(cardId);
+    const preview = document.getElementById(previewId);
+    const img     = preview.querySelector('img');
+    const nameEl  = preview.querySelector('.preview-name');
+
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        img.src  = e.target.result;
+        nameEl.textContent = input.files[0].name;
+        preview.style.display = 'block';
+        card.classList.add('has-file');
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  /* ── Drag-and-drop highlight ───────────────────────────────────────────── */
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop',      () => zone.classList.remove('dragover'));
+  });
+
+  /* ── Submit spinner ────────────────────────────────────────────────────── */
+  document.getElementById('triageForm').addEventListener('submit', () => {
+    const btn     = document.getElementById('submitBtn');
+    const spinner = document.getElementById('spinner');
+    const icon    = document.getElementById('btnIcon');
+    const text    = document.getElementById('btnText');
+    btn.disabled      = true;
+    spinner.style.display = 'block';
+    icon.style.display    = 'none';
+    text.textContent      = 'Analyzing …';
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

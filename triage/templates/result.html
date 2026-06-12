@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Triage Report — Tri-Check</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-base:      #07090f;
+      --bg-card:      #0d1117;
+      --bg-card2:     #111827;
+      --border:       #1e2d40;
+      --accent:       #00e5ff;
+      --accent2:      #7b61ff;
+      --red:          #ff4d6d;
+      --yellow:       #fbbf24;
+      --green:        #22c55e;
+      --text-primary: #e8eaf0;
+      --text-muted:   #6b7fa3;
+      --font-mono:    'Space Mono', monospace;
+      --font-body:    'DM Sans', sans-serif;
+      --radius:       14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+      position: relative; z-index: 1;
+      padding: 2rem 1rem 1.5rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-mark {
+      display: inline-flex; align-items: center; gap: .6rem;
+      margin-bottom: .8rem;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .logo-text {
+      font-family: var(--font-mono); font-size: .85rem;
+      letter-spacing: .15em; color: var(--accent);
+    }
+    h1 {
+      font-family: var(--font-mono);
+      font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+      font-weight: 700;
+    }
+
+    /* ── Page wrapper ────────────────────────────────── */
+    .page { position: relative; z-index: 1; max-width: 1040px; margin: 2rem auto 4rem; padding: 0 1rem; }
+
+    /* ── Verdict card ────────────────────────────────── */
+    .verdict-card {
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      margin-bottom: 2.5rem;
+      border: 1px solid;
+      position: relative;
+      overflow: hidden;
+    }
+    .verdict-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% -20%, var(--glow-color), transparent 60%);
+      pointer-events: none;
+    }
+
+    .verdict-healthy  { border-color: rgba(34,197,94,.35); --glow-color: rgba(34,197,94,.08); }
+    .verdict-warning  { border-color: rgba(251,191,36,.35); --glow-color: rgba(251,191,36,.08); }
+    .verdict-danger   { border-color: rgba(255,77,109,.35); --glow-color: rgba(255,77,109,.08); }
+
+    .verdict-badge {
+      display: inline-block;
+      padding: .35rem 1.1rem;
+      border-radius: 30px;
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      letter-spacing: .12em;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .badge-success { background: rgba(34,197,94,.15);  color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+    .badge-warning { background: rgba(251,191,36,.15); color: var(--yellow); border: 1px solid rgba(251,191,36,.3); }
+    .badge-danger  { background: rgba(255,77,109,.15); color: var(--red);   border: 1px solid rgba(255,77,109,.3); }
+
+    .verdict-score {
+      font-family: var(--font-mono);
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 700;
+      line-height: 1;
+      margin: .5rem 0;
+    }
+    .score-success { color: var(--green); }
+    .score-warning { color: var(--yellow); }
+    .score-danger  { color: var(--red); }
+
+    .verdict-label {
+      font-size: clamp(1.1rem, 3vw, 1.8rem);
+      font-weight: 700;
+      margin-bottom: .6rem;
+    }
+    .verdict-message {
+      font-size: .9rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Gauge bar ───────────────────────────────────── */
+    .gauge-wrap { margin: 1.5rem auto 0; max-width: 400px; }
+    .gauge-track {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .gauge-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease;
+    }
+    .fill-success { background: linear-gradient(90deg, var(--green), #86efac); }
+    .fill-warning { background: linear-gradient(90deg, var(--yellow), #fde68a); }
+    .fill-danger  { background: linear-gradient(90deg, var(--red), #fca5a5); }
+    .gauge-labels {
+      display: flex; justify-content: space-between;
+      font-size: .72rem; color: var(--text-muted);
+      margin-top: .4rem;
+      font-family: var(--font-mono);
+    }
+
+    /* ── Section title ───────────────────────────────── */
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      letter-spacing: .12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Channel grid ────────────────────────────────── */
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+    .channel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color .3s;
+    }
+    .channel-card:hover { border-color: rgba(0,229,255,.25); }
+
+    .channel-header {
+      padding: 1rem 1.2rem .8rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .channel-name {
+      display: flex; align-items: center; gap: .6rem;
+      font-weight: 700; font-size: .9rem;
+    }
+    .ch-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .ch-eye    { background: rgba(0,229,255,.12); color: #00e5ff; }
+    .ch-tongue { background: rgba(255,77,109,.12); color: #ff4d6d; }
+    .ch-nail   { background: rgba(123,97,255,.12); color: #7b61ff; }
+
+    .ch-prob {
+      font-family: var(--font-mono);
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    /* Annotated preview image */
+    .channel-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+      background: var(--bg-card2);
+    }
+
+    .channel-body { padding: 1rem 1.2rem; }
+    .lm-status {
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-bottom: .8rem;
+      font-family: var(--font-mono);
+      background: var(--bg-card2);
+      border-radius: 6px;
+      padding: .35rem .6rem;
+    }
+    .lm-status i { color: var(--accent); }
+
+    /* Feature table */
+    .feat-table { width: 100%; font-size: .78rem; border-collapse: collapse; }
+    .feat-table td { padding: .3rem 0; color: var(--text-muted); }
+    .feat-table td:last-child { text-align: right; font-family: var(--font-mono); color: var(--text-primary); }
+    .feat-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+
+    /* Mini prob bar */
+    .prob-bar-wrap { margin-top: .8rem; }
+    .prob-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: .72rem; color: var(--text-muted);
+      margin-bottom: .3rem;
+    }
+    .prob-bar-track { height: 5px; background: var(--border); border-radius: 3px; }
+    .prob-bar-fill  { height: 100%; border-radius: 3px; }
+
+    /* ── Back button ─────────────────────────────────── */
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      letter-spacing: .08em;
+      text-decoration: none;
+      transition: border-color .25s, background .25s;
+    }
+    .btn-back:hover {
+      background: var(--bg-card2);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    footer {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .76rem;
+      color: var(--text-muted);
+    }
+    footer span { color: var(--accent); }
+
+
+    /* ── Recommendation cards ────────────────────────────────── */
+    .rec-section-title {
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      letter-spacing: .12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      margin-top: 2.5rem;
+    }
+    .rec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .rec-card {
+      border-radius: var(--radius);
+      padding: 1.2rem 1.4rem;
+      border: 1px solid;
+      position: relative;
+      overflow: hidden;
+    }
+    .rec-card.rec-danger  { background: rgba(255,77,109,.07);  border-color: rgba(255,77,109,.3);  }
+    .rec-card.rec-warning { background: rgba(251,191,36,.07);  border-color: rgba(251,191,36,.3);  }
+    .rec-card.rec-success { background: rgba(34,197,94,.07);   border-color: rgba(34,197,94,.3);   }
+    .rec-card.rec-info    { background: rgba(0,229,255,.07);   border-color: rgba(0,229,255,.25);  }
+
+    .rec-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .6rem;
+    }
+    .rec-emoji { font-size: 1.3rem; line-height: 1; }
+    .rec-title {
+      font-weight: 700;
+      font-size: .9rem;
+    }
+    .rec-card.rec-danger  .rec-title { color: var(--red);    }
+    .rec-card.rec-warning .rec-title { color: var(--yellow); }
+    .rec-card.rec-success .rec-title { color: var(--green);  }
+    .rec-card.rec-info    .rec-title { color: var(--accent); }
+
+    .rec-text {
+      font-size: .82rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    @media (max-width: 576px) {
+      .channel-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ════ Header ═══════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo-mark">
+    <div class="logo-icon">🩺</div>
+    <span class="logo-text">TRI-CHECK</span>
+  </div>
+  <h1>Triage Report</h1>
+</header>
+
+<div class="page">
+
+  <!-- ── Verdict ───────────────────────────────────────────────────── -->
+  <div class="verdict-card verdict-{{ badge }}">
+    <div class="verdict-badge badge-{{ badge }}">
+      {{ "✓ CLEAR" if badge == "success" else ("⚠ CAUTION" if badge == "warning" else "✕ ALERT") }}
+    </div>
+    <div class="verdict-score score-{{ badge }}">{{ combined_score }}<small style="font-size:.35em">%</small></div>
+    <div class="verdict-label">{{ label }}</div>
+    <p class="verdict-message">{{ message }}</p>
+
+    <!-- Gauge -->
+    <div class="gauge-wrap">
+      <div class="gauge-track">
+        <div class="gauge-fill fill-{{ badge }}" style="width:{{ combined_score }}%"></div>
+      </div>
+      <div class="gauge-labels">
+        <span>0 — Healthy</span>
+        <span>40 — Moderate</span>
+        <span>65 — Severe — 100</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Channel breakdown ─────────────────────────────────────────── -->
+  <div class="section-title"><i class="bi bi-layers me-2"></i>Per-Channel Analysis</div>
+
+  <div class="channel-grid">
+
+    <!-- Eye -->
+    {% set eye = results['eye'] %}
+    {% set eye_col = "var(--red)" if eye.prob >= 65 else ("var(--yellow)" if eye.prob >= 40 else "var(--green)") %}
+    <div class="channel-card">
+      <div class="channel-header">
+        <div class="channel-name">
+          <div class="ch-icon ch-eye"><i class="bi bi-eye-fill"></i></div>
+          Conjunctiva
+        </div>
+        <span class="ch-prob" style="color:{{ eye_col }}">{{ eye.prob }}%</span>
+      </div>
+      {% if eye.image_b64 %}
+      <img class="channel-img"
+           src="data:image/png;base64,{{ eye.image_b64 }}"
+           alt="Eye with landmark" />
+      {% endif %}
+      <div class="channel-body">
+        <div class="lm-status">
+          <i class="bi bi-geo-alt-fill me-1"></i>{{ eye.status }}
+        </div>
+        <table class="feat-table">
+          <tr><td>R/G Ratio</td><td>{{ eye.features.rg_ratio }}</td></tr>
+          <tr><td>LAB a*</td><td>{{ eye.features.lab_a }}</td></tr>
+          <tr><td>Mean R</td><td>{{ eye.features.mean_r }}</td></tr>
+          <tr><td>Mean G</td><td>{{ eye.features.mean_g }}</td></tr>
+          <tr><td>Mean B</td><td>{{ eye.features.mean_b }}</td></tr>
+        </table>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar-label"><span>Anemia probability</span><span>{{ eye.prob }}%</span></div>
+          <div class="prob-bar-track">
+            <div class="prob-bar-fill"
+                 style="width:{{ eye.prob }}%;background:{{ eye_col }}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tongue -->
+    {% set tng = results['tongue'] %}
+    {% set tng_col = "var(--red)" if tng.prob >= 65 else ("var(--yellow)" if tng.prob >= 40 else "var(--green)") %}
+    <div class="channel-card">
+      <div class="channel-header">
+        <div class="channel-name">
+          <div class="ch-icon ch-tongue"><i class="bi bi-moisture"></i></div>
+          Tongue
+        </div>
+        <span class="ch-prob" style="color:{{ tng_col }}">{{ tng.prob }}%</span>
+      </div>
+      {% if tng.image_b64 %}
+      <img class="channel-img"
+           src="data:image/png;base64,{{ tng.image_b64 }}"
+           alt="Tongue with landmark" />
+      {% endif %}
+      <div class="channel-body">
+        <div class="lm-status">
+          <i class="bi bi-geo-alt-fill me-1"></i>{{ tng.status }}
+        </div>
+        <table class="feat-table">
+          <tr><td>R/G Ratio</td><td>{{ tng.features.rg_ratio }}</td></tr>
+          <tr><td>LAB a*</td><td>{{ tng.features.lab_a }}</td></tr>
+          <tr><td>Mean R</td><td>{{ tng.features.mean_r }}</td></tr>
+          <tr><td>Mean G</td><td>{{ tng.features.mean_g }}</td></tr>
+          <tr><td>Mean B</td><td>{{ tng.features.mean_b }}</td></tr>
+        </table>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar-label"><span>Anemia probability</span><span>{{ tng.prob }}%</span></div>
+          <div class="prob-bar-track">
+            <div class="prob-bar-fill"
+                 style="width:{{ tng.prob }}%;background:{{ tng_col }}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nail -->
+    {% set nai = results['nail'] %}
+    {% set nai_col = "var(--red)" if nai.prob >= 65 else ("var(--yellow)" if nai.prob >= 40 else "var(--green)") %}
+    <div class="channel-card">
+      <div class="channel-header">
+        <div class="channel-name">
+          <div class="ch-icon ch-nail"><i class="bi bi-hand-index-fill"></i></div>
+          Nail Bed
+        </div>
+        <span class="ch-prob" style="color:{{ nai_col }}">{{ nai.prob }}%</span>
+      </div>
+      {% if nai.image_b64 %}
+      <img class="channel-img"
+           src="data:image/png;base64,{{ nai.image_b64 }}"
+           alt="Nail with landmark" />
+      {% endif %}
+      <div class="channel-body">
+        <div class="lm-status">
+          <i class="bi bi-geo-alt-fill me-1"></i>{{ nai.status }}
+        </div>
+        <table class="feat-table">
+          <tr><td>R/G Ratio</td><td>{{ nai.features.rg_ratio }}</td></tr>
+          <tr><td>LAB a*</td><td>{{ nai.features.lab_a }}</td></tr>
+          <tr><td>Mean R</td><td>{{ nai.features.mean_r }}</td></tr>
+          <tr><td>Mean G</td><td>{{ nai.features.mean_g }}</td></tr>
+          <tr><td>Mean B</td><td>{{ nai.features.mean_b }}</td></tr>
+        </table>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar-label"><span>Anemia probability</span><span>{{ nai.prob }}%</span></div>
+          <div class="prob-bar-track">
+            <div class="prob-bar-fill"
+                 style="width:{{ nai.prob }}%;background:{{ nai_col }}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /channel-grid -->
+
+
+  <!-- ── Recommendations ──────────────────────────────────────────── -->
+  {% if recommendations %}
+  <div class="rec-section-title">
+    <i class="bi bi-lightbulb me-2"></i>Personalised Recommendations
+  </div>
+  <div class="rec-grid">
+    {% for rec in recommendations %}
+    <div class="rec-card rec-{{ rec.level }}">
+      <div class="rec-header">
+        <span class="rec-emoji">{{ rec.icon }}</span>
+        <span class="rec-title">{{ rec.title }}</span>
+      </div>
+      <p class="rec-text">{{ rec.text }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── Actions ───────────────────────────────────────────────────── -->
+  <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+    <a href="/" class="btn-back">
+      <i class="bi bi-arrow-left"></i> New Analysis
+    </a>
+    <button onclick="window.print()" class="btn-back">
+      <i class="bi bi-printer"></i> Print Report
+    </button>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  Tri-Check Anemia Triage &nbsp;·&nbsp;
+  <span>Screening only — not a clinical diagnosis.</span>
+  Consult a healthcare professional for medical advice.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
