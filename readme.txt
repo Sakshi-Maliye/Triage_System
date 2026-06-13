@@ -1,4 +1,4 @@
-Project-19(DS)/
+Project/
 ├── data/
 │   ├── India_Eyes/      # Existing conjunctiva images (1, 2, 3...)
 │   ├── India_Tongue/    # NEW: Tongue images (1, 2, 3...)
@@ -9,7 +9,7 @@ Project-19(DS)/
 
 
 
-Project-19(DS)/
+Project/
 ├── data/
 │   ├── India_Eyes/             # Folders 1, 2, 3...
 │   └── Nail_Disease_Dataset/   # THE NEW DATASET
